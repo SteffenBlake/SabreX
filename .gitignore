@@ -1,0 +1,6 @@
+*.dll
+[Bb]in
+[Oo]bj
+[Dd]ebug*/
+[Rr]elease*/
+[Bb]uild/
