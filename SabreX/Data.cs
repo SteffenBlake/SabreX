@@ -18,8 +18,8 @@ namespace SabreX
             Dark = -2,
             Moody = -1,
             Normal = 0,
-            Dim = 1
-        Bright = 2,
+            Dim = 1,
+            Bright = 2,
             Blinding = 3
         }
 
