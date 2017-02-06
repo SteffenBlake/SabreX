@@ -6,4 +6,5 @@
 	<s:Boolean x:Key="/Default/Housekeeping/UnitTestingMru/UnitTestSessionPersistentData/=495138D9C65C4CCA985638B825599094/@KeyIndexDefined">True</s:Boolean>
 	<s:Int64 x:Key="/Default/Housekeeping/UnitTestingMru/UnitTestSessionPersistentData/=495138D9C65C4CCA985638B825599094/GroupingIndex/@EntryValue">4</s:Int64>
 	<s:String x:Key="/Default/Housekeeping/UnitTestingMru/UnitTestSessionPersistentData/=495138D9C65C4CCA985638B825599094/Name/@EntryValue">ObjectTest</s:String>
+	<s:Boolean x:Key="/Default/Housekeeping/UnitTestingMru/UnitTestSessionPersistentData/=495138D9C65C4CCA985638B825599094/ShowTime/@EntryValue">True</s:Boolean>
 	<s:String x:Key="/Default/Housekeeping/UnitTestingMru/UnitTestSessionPersistentData/=495138D9C65C4CCA985638B825599094/XmlSerializedElements/@EntryValue">&lt;Session&gt;&lt;e Id="SabreTesting.ObjectTest" Project="40B2B88B-F20B-47EA-9427-C08F208DF388" Provider="nUnit" /&gt;&lt;e Id="SabreTesting.ObjectTest.TestInheritance" Project="40B2B88B-F20B-47EA-9427-C08F208DF388" Provider="nUnit" /&gt;&lt;/Session&gt;</s:String></wpf:ResourceDictionary>

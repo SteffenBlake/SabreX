@@ -7,7 +7,7 @@ namespace SabreX
     /// <summary>
     ///     Holds all the Enums and Dictionaries for generating properties.
     /// </summary>
-    internal class Data
+    public class Data
     {
         /// <summary>
         ///     Modifies how bright an object is.
@@ -36,14 +36,26 @@ namespace SabreX
             Heavy = 5
         }
 
+        public enum SizeEnum
+        {
+            NonCorporeal = 0,
+            Miniscule = 1,
+            Tiny = 2,
+            Small = 3,
+            Normal = 4,
+            Big = 5,
+            Massive = 6,
+            Huge = 7
+        }
+
         /// <summary>
         ///     Modifies what an object smells like.
         /// </summary>
         public enum SmellEnum
         {
             Disgusting = -3,
-            Nasty = 2,
-            Smell = 1,
+            Nasty = -2,
+            Smelly = -1,
             Nothing = 0,
             Armoatic = 1,
             Fragrant = 2,
@@ -55,6 +67,13 @@ namespace SabreX
         /// </summary>
         public enum TasteEnum
         {
+            Disgusting = -3,
+            Nasty = -2,
+            Gross = -1,
+            Nothing = 0,
+            Tasty = 1,
+            Yummy = 2,
+            Delicious = 3
         }
 
         /// <summary>
@@ -95,6 +114,15 @@ namespace SabreX
             Audible = 2,
             Loud = 3,
             Deafening = 4
+        }
+
+        public enum StyleEnum
+        {
+            Horrifying = 0,
+            Gross = 1,
+            Creepy = 2,
+            Dull = 3,
+            Elegant = 4
         }
     }
 }
