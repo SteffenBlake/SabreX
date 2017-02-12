@@ -9,36 +9,20 @@ namespace SabreX
     /// </summary>
     public class ObjectBase
     {
-        public ObjectBase(){}
-        
-        public ObjectBase(ObjectTemplate template)
-        {
-            Inherit(template, true);
-
-            Size.MinMax(template.MinParams["Size"], template.MaxParams["Size"]);
-            Smell.MinMax(template.MinParams["Smell"], template.MaxParams["Smell"]);
-            Taste.MinMax(template.MinParams["Taste"], template.MaxParams["Taste"]);
-            Temperature.MinMax(template.MinParams["Temperature"], template.MaxParams["Temperature"]);
-            Texture.MinMax(template.MinParams["Texture"], template.MaxParams["Texture"]);
-            Volume.MinMax(template.MinParams["Volume"], template.MaxParams["Volume"]);
-            Density.MinMax(template.MinParams["Density"], template.MaxParams["Density"]);
-            Brightness.MinMax(template.MinParams["Brightness"], template.MaxParams["Brightness"]);
-            Style.MinMax(template.MinParams["Style"], template.MaxParams["Style"]);
-
-            DoSpecialLoad();
-        }
 
         //Property Objects for Generation
         public string Name { get; set; }
-        public PropertyBase Size = new PropertyBase(typeof(Data.SizeEnum));
-        public PropertyBase Smell = new PropertyBase(typeof(Data.SmellEnum));
-        public PropertyBase Taste = new PropertyBase(typeof(Data.TasteEnum));
-        public PropertyBase Temperature = new PropertyBase(typeof(Data.TemperatureEnum));
-        public PropertyBase Texture = new PropertyBase(typeof(Data.TextureEnum));
-        public PropertyBase Volume = new PropertyBase(typeof(Data.VolumeEnum));
-        public PropertyBase Density = new PropertyBase(typeof (Data.DensityEnum));
-        public PropertyBase Brightness = new PropertyBase(typeof (Data.BrightnessEnum));
-        public PropertyBase Style = new PropertyBase(typeof (Data.StyleEnum));
+
+        //Properties
+        public BrightnessProperty Brightness = new BrightnessProperty();
+        public DensityProperty Density = new DensityProperty();
+        public SizeProperty Size = new SizeProperty();
+        public SmellProperty Smell = new SmellProperty();
+        public TasteProperty Taste = new TasteProperty();
+        public TemperatureProperty Temperature = new TemperatureProperty();
+        public TextureProperty Texture = new TextureProperty();
+        public VolumeProperty Volume = new VolumeProperty();
+        public StyleProperty Style = new StyleProperty();
 
         //Library
         public Dictionary<string, Action> Commands = new Dictionary<string, Action>();
@@ -48,17 +32,6 @@ namespace SabreX
         //Heirachy
         public List<ObjectBase> Surface = new List<ObjectBase>();
 
-        //Values (Readonly)
-        public virtual int _size() => Size.Value;
-        public virtual int _smell() => Smell.Value + Surface.Sum(p => p._smell());
-        public virtual int _taste() => Taste.Value;
-        public virtual int _temperature() => Parent?._temperature() ?? Temperature.Value;
-        public virtual int _texture() => Texture.Value;
-        public virtual int _volume() => Volume.Value + Surface.Sum(p => p._volume());
-        public virtual int _density() => Density.Value;
-        public virtual int _brightness() => Brightness.Value + Surface.Sum(p => p._brightness());
-        public virtual int _weight() => _size()*_density() + Surface.Sum(p => p._weight());
-        public virtual int _style() => Style.Value;
 
         /// <summary>
         ///     Copies all the parent methods to the child, writing over anything with the same name.
@@ -78,6 +51,16 @@ namespace SabreX
             {
                 Functions[pair.Key] = pair.Value;
             }
+
+            (Brightness.Min, Brightness.Max) = parent.Brightness.MinMax();
+            (Density.Min, Density.Max) = parent.Density.MinMax();
+            (Size.Min, Size.Max) = parent.Size.MinMax();
+            (Smell.Min, Smell.Max) = parent.Smell.MinMax();
+            (Taste.Min, Taste.Max) = parent.Taste.MinMax();
+            (Temperature.Min, Temperature.Max) = parent.Temperature.MinMax();
+            (Texture.Min, Texture.Max) = parent.Texture.MinMax();
+            (Volume.Min, Volume.Max) = parent.Volume.MinMax();
+            (Style.Min, Style.Max) = parent.Style.MinMax();
 
             return true;
         }
@@ -118,39 +101,10 @@ namespace SabreX
 
         public virtual void Generate()
         {
-            foreach (var Child in Surface)
+            foreach (var child in Surface)
             {
-                Child.Generate();
+                child.Generate();
             }
-        }
-    }
-
-    public class PropertyBase
-    {
-        public PropertyBase(Type enumType)
-        {
-            var vals = enumType.GetEnumValues().Cast<int>();
-            MinVal = vals.Min();
-            MaxVal = vals.Max();
-        }
-
-        public int Value { get; set; }
-        private int MaxVal { get; set; }
-        private int MinVal { get; set; }
-
-        public void Generate()
-        {
-            var rnd = new Random();
-            Value = rnd.Next(MinVal, MaxVal + 1);
-        }
-
-        public void Max(int val) => MaxVal = val;
-        public void Min(int val) => MinVal = val;
-
-        public void MinMax(int min, int max)
-        {
-            Min(min);
-            Max(max);
         }
     }
 
@@ -158,12 +112,6 @@ namespace SabreX
     {
         //Heirachy
         public List<ObjectBase> Container = new List<ObjectBase>();
-
-        public override int _smell() => Smell.Value + Surface.Sum(p => p._smell()) + Container.Sum(p => p._smell());
-        public override int _temperature() => Parent?._temperature() ?? Temperature.Value + Container.Sum(p => p._temperature());
-        public override int _volume() => Volume.Value + Surface.Sum(p => p._volume()) + Container.Sum(p => p._volume());
-        public override int _weight() => _size()*_density() + Surface.Sum(p => p._weight()) + Container.Sum(p => p._weight());
-        public override int _brightness() => Container.Sum(p => p._brightness());
 
         public override void Generate()
         {
@@ -179,32 +127,168 @@ namespace SabreX
         }
     }
 
-    public class ObjectTemplate : ObjectBase
+    public class BrightnessProperty
     {
-        public Dictionary<string, int> MaxParams = new Dictionary<string, int>()
-        {
-            { "Size", (int)Data.SizeEnum.Normal },
-            { "Smell", (int)Data.SmellEnum.Nothing },
-            { "Taste", (int)Data.TasteEnum.Nothing },
-            { "Temperature", (int)Data.TemperatureEnum.Normal },
-            { "Texture", (int)Data.TextureEnum.Normal },
-            { "Volume", (int)Data.VolumeEnum.Silent },
-            { "Density", (int)Data.DensityEnum.Normal },
-            { "Brightness", (int)Data.BrightnessEnum.Normal },
-            { "Style", (int)Data.StyleEnum.Dull },
-        };
+        public Data.BrightnessEnum Value { get; set; }
+        public Data.BrightnessEnum Min { get; set; }
+        public Data.BrightnessEnum Max { get; set; }
 
-        public Dictionary<string, int> MinParams = new Dictionary<string, int>()
+        public BrightnessProperty()
         {
-            { "Size", (int)Data.SizeEnum.Normal },
-            { "Smell", (int)Data.SmellEnum.Nothing },
-            { "Taste", (int)Data.TasteEnum.Nothing },
-            { "Temperature", (int)Data.TemperatureEnum.Normal },
-            { "Texture", (int)Data.TextureEnum.Normal },
-            { "Volume", (int)Data.VolumeEnum.Silent },
-            { "Density", (int)Data.DensityEnum.Normal },
-            { "Brightness", (int)Data.BrightnessEnum.Normal },
-            { "Style", (int)Data.StyleEnum.Dull },
-        };
+            List<Data.BrightnessEnum> enumList = Enum.GetValues(typeof(Data.BrightnessEnum)).Cast<Data.BrightnessEnum>().ToList();
+            Value = Data.BrightnessEnum.Normal;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+
+        public (Data.BrightnessEnum, Data.BrightnessEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class DensityProperty
+    {
+        public Data.DensityEnum Value { get; set; }
+        public Data.DensityEnum Min { get; set; }
+        public Data.DensityEnum Max { get; set; }
+
+        public DensityProperty()
+        {
+            List<Data.DensityEnum> enumList = Enum.GetValues(typeof(Data.DensityEnum)).Cast<Data.DensityEnum>().ToList();
+            Value = Data.DensityEnum.Normal;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.DensityEnum, Data.DensityEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class SizeProperty
+    {
+        public Data.SizeEnum Value { get; set; }
+        public Data.SizeEnum Min { get; set; }
+        public Data.SizeEnum Max { get; set; }
+
+        public SizeProperty()
+        {
+            List<Data.SizeEnum> enumList = Enum.GetValues(typeof(Data.SizeEnum)).Cast<Data.SizeEnum>().ToList().ToList();
+            Value = Data.SizeEnum.Normal;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.SizeEnum, Data.SizeEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class SmellProperty
+    {
+        public Data.SmellEnum Value { get; set; }
+        public Data.SmellEnum Min { get; set; }
+        public Data.SmellEnum Max { get; set; }
+
+        public SmellProperty()
+        {
+            List<Data.SmellEnum> enumList = Enum.GetValues(typeof(Data.SmellEnum)).Cast<Data.SmellEnum>().ToList();
+            Value = Data.SmellEnum.Nothing;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.SmellEnum, Data.SmellEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class TasteProperty
+    {
+        public Data.TasteEnum Value { get; set; }
+        public Data.TasteEnum Min { get; set; }
+        public Data.TasteEnum Max { get; set; }
+
+        public TasteProperty()
+        {
+            List<Data.TasteEnum> enumList = Enum.GetValues(typeof(Data.TasteEnum)).Cast<Data.TasteEnum>().ToList();
+            Value = Data.TasteEnum.Nothing;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.TasteEnum, Data.TasteEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class TemperatureProperty
+    {
+        public Data.TemperatureEnum Value { get; set; }
+        public Data.TemperatureEnum Min { get; set; }
+        public Data.TemperatureEnum Max { get; set; }
+
+        public TemperatureProperty()
+        {
+            List<Data.TemperatureEnum> enumList = Enum.GetValues(typeof(Data.TemperatureEnum)).Cast<Data.TemperatureEnum>().ToList();
+            Value = Data.TemperatureEnum.Normal;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.TemperatureEnum, Data.TemperatureEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class TextureProperty
+    {
+        public Data.TextureEnum Value { get; set; }
+        public Data.TextureEnum Min { get; set; }
+        public Data.TextureEnum Max { get; set; }
+
+        public TextureProperty()
+        {
+            List<Data.TextureEnum> enumList = Enum.GetValues(typeof(Data.TextureEnum)).Cast<Data.TextureEnum>().ToList();
+            Value = Data.TextureEnum.Normal;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.TextureEnum, Data.TextureEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class VolumeProperty
+    {
+        public Data.VolumeEnum Value { get; set; }
+        public Data.VolumeEnum Min { get; set; }
+        public Data.VolumeEnum Max { get; set; }
+
+        public VolumeProperty()
+        {
+            List<Data.VolumeEnum> enumList = Enum.GetValues(typeof(Data.VolumeEnum)).Cast<Data.VolumeEnum>().ToList();
+            Value = Data.VolumeEnum.Silent;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+
+        public (Data.VolumeEnum, Data.VolumeEnum) MinMax()
+        {
+            return (Min, Max);
+        }
+    }
+    public class StyleProperty
+    {
+        public Data.StyleEnum Value { get; set; }
+        public Data.StyleEnum Min { get; set; }
+        public Data.StyleEnum Max { get; set; }
+
+        public StyleProperty()
+        {
+            List<Data.StyleEnum> enumList = Enum.GetValues(typeof(Data.StyleEnum)).Cast<Data.StyleEnum>().ToList();
+            Value = Data.StyleEnum.Dull;
+            Min = enumList.Min();
+            Max = enumList.Max();
+        }
+        public (Data.StyleEnum, Data.StyleEnum) MinMax()
+        {
+            return (Min, Max);
+        }
     }
 }
