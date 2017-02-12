@@ -84,8 +84,14 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="ObjectTest.cs" />
+    <Compile Include="ObjectBase.feature.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ObjectBase.feature</DependentUpon>
+    </Compile>
+    <Compile Include="ObjectBaseSteps.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SpecFlowNUnitExtension.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SabreX\SabreX.csproj">
@@ -97,6 +103,10 @@
     <None Include="App.config" />
     <None Include="Default.srprofile">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ObjectBase.feature">
+      <Generator>SpecFlowSingleFileGenerator</Generator>
+      <LastGenOutput>ObjectBase.feature.cs</LastGenOutput>
     </None>
     <None Include="packages.config" />
     <None Include="runtests.cmd" />

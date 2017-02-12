@@ -4,11 +4,73 @@ using System.Linq;
 
 namespace SabreX
 {
+    public class ObjectFactory
+    {
+        public Dictionary<Guid, ObjectBase> ObjectDictionary = new Dictionary<Guid, ObjectBase>();
+
+        public ObjectFactory()
+        {
+            ObjectDictionary = new Dictionary<Guid, ObjectBase>();
+        }
+
+        public ObjectFactory(Dictionary<Guid, ObjectBase> LoadList)
+        {
+            ObjectDictionary = LoadList;
+        }
+
+        public Guid Generate()
+        {
+            ObjectBase genObj = new ObjectBase();
+            ObjectDictionary.Add(genObj.Id, genObj);
+            return genObj.Id;
+        }
+
+        public Guid Generate(ObjectBase Template)
+        {
+            ObjectBase genObj = new ObjectBase();
+            genObj.Inherit(Template);
+            ObjectDictionary.Add(genObj.Id, genObj);
+            return genObj.Id;
+        }
+
+        public Guid Generate(ObjectBase Template, Boolean Maintain)
+        {
+            ObjectBase genObj = new ObjectBase();
+            genObj.Inherit(Template, Maintain);
+            ObjectDictionary.Add(genObj.Id, genObj);
+            return genObj.Id;
+        }
+
+        public ObjectBase Get(Guid Id)
+        {
+            if (ObjectDictionary.ContainsKey(Id)) { return ObjectDictionary[Id]; }
+            else
+            {
+                throw new ArgumentException("Attempted to index an object Id that does not exist in the factory!", "Id");
+            }
+        }
+
+        public List<ObjectBase> GetList(List<Guid> Ids)
+        {
+            if (Ids.Except(ObjectDictionary.Keys).Any()) { throw new ArgumentException("Attempted to index object Ids that do not exist in the factory!", "Id List");}
+            else
+            {
+                return ObjectDictionary.Where(p => Ids.Contains(p.Key)).Select(p => p.Value).ToList();
+            }
+        }
+    }
+
     /// <summary>
     ///     Generic Object type
     /// </summary>
     public class ObjectBase
     {
+        public Guid Id;
+
+        public ObjectBase()
+        {
+            Id = new Guid();
+        }
 
         //Property Objects for Generation
         public string Name { get; set; }
@@ -30,7 +92,7 @@ namespace SabreX
         public ObjectBase Parent = null;
 
         //Heirachy
-        public List<ObjectBase> Surface = new List<ObjectBase>();
+        public List<Guid> Surface = new List<Guid>();
 
 
         /// <summary>
@@ -99,31 +161,49 @@ namespace SabreX
         }
         public void DoSpecialLoad() { }
 
-        public virtual void Generate()
+        public virtual void Generate(ObjectFactory FACTORY)
         {
-            foreach (var child in Surface)
+            foreach (var child in FACTORY.GetList(Surface))
             {
-                child.Generate();
+                child.Generate(FACTORY);
             }
+        }
+
+        public virtual List<Guid> getChildren(ObjectFactory FACTORY)
+        {
+            List<Guid> outlist = new List<Guid>();
+            outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+            outlist.AddRange(Surface);
+            return outlist;
         }
     }
 
     public class ObjectContainer : ObjectBase
     {
         //Heirachy
-        public List<ObjectBase> Container = new List<ObjectBase>();
+        public List<Guid> Container = new List<Guid>();
 
-        public override void Generate()
+        public override void Generate(ObjectFactory FACTORY)
         {
-            foreach (var child in Surface)
+            foreach (var child in FACTORY.GetList(Surface))
             {
-                child.Generate();
+                child.Generate(FACTORY);
             }
 
-            foreach (var child in Container)
+            foreach (var child in FACTORY.GetList(Container))
             {
-                child.Generate();
+                child.Generate(FACTORY);
             }
+        }
+
+        public override List<Guid> getChildren(ObjectFactory FACTORY)
+        {
+            List<Guid> outlist = new List<Guid>();
+            outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+            outlist.AddRange(Surface);
+            outlist.AddRange(Container.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+            outlist.AddRange(Container);
+            return outlist;
         }
     }
 
