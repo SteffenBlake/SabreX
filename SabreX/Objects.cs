@@ -4,6 +4,13 @@ using System.Linq;
 
 namespace SabreX
 {
+    /// <summary>
+    /// Class to use to generate distinct objects in the game. All Objects have distinct Ids
+    /// that can be referenced in the Dictionary of the Factory, or more simply by using
+    /// the built in methods of this factory.
+    /// One should avoid ever creating objects manually using the New() method.
+    /// Use Factory.Generate() to create objects instead.
+    /// </summary>
     public class ObjectFactory
     {
         public Dictionary<Guid, ObjectBase> ObjectDictionary = new Dictionary<Guid, ObjectBase>();
@@ -18,27 +25,50 @@ namespace SabreX
             ObjectDictionary = LoadList;
         }
 
-        public Guid Generate()
+        public void Generate(out Guid Id)
         {
             ObjectBase genObj = new ObjectBase();
             ObjectDictionary.Add(genObj.Id, genObj);
-            return genObj.Id;
+            Id = genObj.Id;
         }
 
-        public Guid Generate(ObjectBase Template)
+        public void Generate(out ObjectBase Obj)
+        {
+            ObjectBase genObj = new ObjectBase();
+            ObjectDictionary.Add(genObj.Id, genObj);
+            Obj = genObj;
+        }
+
+        public void Generate(out Guid Id, ObjectBase Template)
         {
             ObjectBase genObj = new ObjectBase();
             genObj.Inherit(Template);
             ObjectDictionary.Add(genObj.Id, genObj);
-            return genObj.Id;
+            Id = genObj.Id;
         }
 
-        public Guid Generate(ObjectBase Template, Boolean Maintain)
+        public void Generate(out ObjectBase Obj, ObjectBase Template)
+        {
+            ObjectBase genObj = new ObjectBase();
+            genObj.Inherit(Template);
+            ObjectDictionary.Add(genObj.Id, genObj);
+            Obj = genObj;
+        }
+
+        public void Generate(out Guid Id, ObjectBase Template, Boolean Maintain)
         {
             ObjectBase genObj = new ObjectBase();
             genObj.Inherit(Template, Maintain);
             ObjectDictionary.Add(genObj.Id, genObj);
-            return genObj.Id;
+            Id = genObj.Id;
+        }
+
+        public void Generate(out ObjectBase Obj, ObjectBase Template, Boolean Maintain)
+        {
+            ObjectBase genObj = new ObjectBase();
+            genObj.Inherit(Template, Maintain);
+            ObjectDictionary.Add(genObj.Id, genObj);
+            Obj = genObj;
         }
 
         public ObjectBase Get(Guid Id)
@@ -65,11 +95,32 @@ namespace SabreX
     /// </summary>
     public class ObjectBase
     {
-        public Guid Id;
+        public Guid Id = Guid.Empty;
 
+        public bool isContainer = false;
+        public bool isSurface = false;
+
+        public List<Guid> Container = new List<Guid>();
+        public List<Guid> Surface = new List<Guid>();
+
+        /// <summary>
+        /// Creates an Ungenerated new Object with a 
+        /// </summary>
         public ObjectBase()
         {
             Id = new Guid();
+            DoSpecialLoad();
+        }
+
+        /// <summary>
+        /// If Generating a Template Object, there's no point in assigning it a Guid
+        /// </summary>
+        /// <param name="Template">Is this a Template Object?</param>
+        public ObjectBase(Boolean Template)
+        {
+            if (Template) { return; }
+            Id = new Guid();
+            DoSpecialLoad();
         }
 
         //Property Objects for Generation
@@ -91,18 +142,16 @@ namespace SabreX
         public Dictionary<string, Func<int?, int>> Functions = new Dictionary<string, Func<int?, int>>();
         public ObjectBase Parent = null;
 
-        //Heirachy
-        public List<Guid> Surface = new List<Guid>();
-
-
         /// <summary>
-        ///     Copies all the parent methods to the child, writing over anything with the same name.
+        ///     Copies all the parent methods/properties to the child, writing over anything with the same name.
         /// </summary>
         /// <param name="parent">Parent object to derive from</param>
         /// <returns></returns>
-        public bool Inherit(ObjectBase parent)
+        public void Inherit(ObjectBase parent)
         {
             Name = parent.Name;
+            isContainer = parent.isContainer;
+            isSurface = parent.isSurface;
 
             foreach (var pair in parent.Commands)
             {
@@ -123,22 +172,20 @@ namespace SabreX
             (Texture.Min, Texture.Max) = parent.Texture.MinMax();
             (Volume.Min, Volume.Max) = parent.Volume.MinMax();
             (Style.Min, Style.Max) = parent.Style.MinMax();
-
-            return true;
         }
 
         /// <summary>
-        ///     Copies the parent methods to the child.
+        ///     Copies the parent methods/properties to the child.
         /// </summary>
         /// <param name="parent">Parent object to derive from</param>
         /// <param name="maintain">If true, won't overwrite values that already exist.</param>
         /// <returns></returns>
-        public bool Inherit(ObjectBase parent, bool maintain)
+        public void Inherit(ObjectBase parent, bool maintain)
         {
             if (!maintain)
             {
                 Inherit(parent);
-                return true;
+                return;
             }
             Name = parent.Name;
             foreach (var pair in parent.Commands)
@@ -156,55 +203,61 @@ namespace SabreX
                     Functions[pair.Key] = pair.Value;
                 }
             }
-
-            return true;
         }
-        public void DoSpecialLoad() { }
-
-        public virtual void Generate(ObjectFactory FACTORY)
+        
+        public void Generate(ObjectFactory FACTORY)
         {
-            foreach (var child in FACTORY.GetList(Surface))
+            if (isContainer)
             {
-                child.Generate(FACTORY);
+                foreach (var child in FACTORY.GetList(Container))
+                {
+                    child.Generate(FACTORY);
+                }
             }
+
+            if (isSurface) {
+                foreach (var child in FACTORY.GetList(Surface))
+                {
+                    child.Generate(FACTORY);
+                }
+            }
+
+            Brightness.Generate();
+            Density.Generate();
+            Size.Generate();
+            Smell.Generate();
+            Taste.Generate();
+            Temperature.Generate();
+            Texture.Generate();
+            Volume.Generate();
+            Style.Generate();
+
+            DoSpecialGenerate();
         }
 
-        public virtual List<Guid> getChildren(ObjectFactory FACTORY)
+        /// <summary>
+        /// Gets a list of all children objects of this object, including subchildren recursively.
+        /// </summary>
+        /// <param name="FACTORY">The ObjectFactory of the project.</param>
+        /// <returns></returns>
+        public List<Guid> getChildren(ObjectFactory FACTORY)
         {
             List<Guid> outlist = new List<Guid>();
-            outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
-            outlist.AddRange(Surface);
+            if (isSurface)
+            {
+                outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+                outlist.AddRange(Surface);
+            }
+            if (isContainer)
+            {
+                outlist.AddRange(Container.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+                outlist.AddRange(Container);
+            }
             return outlist;
         }
-    }
 
-    public class ObjectContainer : ObjectBase
-    {
-        //Heirachy
-        public List<Guid> Container = new List<Guid>();
-
-        public override void Generate(ObjectFactory FACTORY)
-        {
-            foreach (var child in FACTORY.GetList(Surface))
-            {
-                child.Generate(FACTORY);
-            }
-
-            foreach (var child in FACTORY.GetList(Container))
-            {
-                child.Generate(FACTORY);
-            }
-        }
-
-        public override List<Guid> getChildren(ObjectFactory FACTORY)
-        {
-            List<Guid> outlist = new List<Guid>();
-            outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
-            outlist.AddRange(Surface);
-            outlist.AddRange(Container.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
-            outlist.AddRange(Container);
-            return outlist;
-        }
+        public virtual void DoSpecialLoad() { }
+        public virtual void DoSpecialGenerate() { }
     }
 
     public class BrightnessProperty
@@ -225,6 +278,11 @@ namespace SabreX
         {
             return (Min, Max);
         }
+
+        public void Generate()
+        {
+            Value = (Data.BrightnessEnum)(new Random().Next((int)Min, (int)Max + 1));
+        }
     }
     public class DensityProperty
     {
@@ -242,6 +300,11 @@ namespace SabreX
         public (Data.DensityEnum, Data.DensityEnum) MinMax()
         {
             return (Min, Max);
+        }
+
+        public void Generate()
+        {
+            Value = (Data.DensityEnum)(new Random().Next((int)Min, (int)Max + 1));
         }
     }
     public class SizeProperty
@@ -261,6 +324,11 @@ namespace SabreX
         {
             return (Min, Max);
         }
+
+        public void Generate()
+        {
+            Value = (Data.SizeEnum)(new Random().Next((int)Min, (int)Max + 1));
+        }
     }
     public class SmellProperty
     {
@@ -278,6 +346,11 @@ namespace SabreX
         public (Data.SmellEnum, Data.SmellEnum) MinMax()
         {
             return (Min, Max);
+        }
+
+        public void Generate()
+        {
+            Value = (Data.SmellEnum)(new Random().Next((int)Min, (int)Max + 1));
         }
     }
     public class TasteProperty
@@ -297,6 +370,11 @@ namespace SabreX
         {
             return (Min, Max);
         }
+
+        public void Generate()
+        {
+            Value = (Data.TasteEnum)(new Random().Next((int)Min, (int)Max + 1));
+        }
     }
     public class TemperatureProperty
     {
@@ -315,6 +393,11 @@ namespace SabreX
         {
             return (Min, Max);
         }
+
+        public void Generate()
+        {
+            Value = (Data.TemperatureEnum)(new Random().Next((int)Min, (int)Max + 1));
+        }
     }
     public class TextureProperty
     {
@@ -332,6 +415,11 @@ namespace SabreX
         public (Data.TextureEnum, Data.TextureEnum) MinMax()
         {
             return (Min, Max);
+        }
+
+        public void Generate()
+        {
+            Value = (Data.TextureEnum)(new Random().Next((int)Min, (int)Max + 1));
         }
     }
     public class VolumeProperty
@@ -352,6 +440,11 @@ namespace SabreX
         {
             return (Min, Max);
         }
+
+        public void Generate()
+        {
+            Value = (Data.VolumeEnum)(new Random().Next((int)Min, (int)Max + 1));
+        }
     }
     public class StyleProperty
     {
@@ -369,6 +462,11 @@ namespace SabreX
         public (Data.StyleEnum, Data.StyleEnum) MinMax()
         {
             return (Min, Max);
+        }
+
+        public void Generate()
+        {
+            Value = (Data.StyleEnum)(new Random().Next((int)Min, (int)Max + 1));
         }
     }
 }

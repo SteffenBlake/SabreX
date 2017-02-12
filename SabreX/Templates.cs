@@ -8,45 +8,15 @@ namespace SabreX
 {
     class Templates
     {
-        List<ObjectTemplate> TemplateList = new List<ObjectTemplate>();
+        public List<ObjectBase> BaseTemplateList = new List<ObjectBase>();
+        public List<ObjectBase> SurfaceTemplateList = new List<ObjectBase>();
+        public List<ObjectBase> ContainerTemplateList = new List<ObjectBase>();
+        public List<ObjectBase> CompoundTemplateList = new List<ObjectBase>();
 
-        public void InitializeTemplates()
+        public Templates()
         {
-            TemplateList.AddRange( new List<ObjectTemplate>()
+            BaseTemplateList.Add(new ObjectBase(true)
             {
-                new ObjectTemplate()
-                {
-                    Name = "Chair",
-                    MaxParams = new Dictionary<string, int>()
-                    {
-                        {"Size", (int) Data.SizeEnum.Big},
-                        {"Texture", (int) Data.TextureEnum.Bumpy},
-                        {"Style", (int) Data.StyleEnum.Elegant}
-                    },
-                    MinParams = new Dictionary<string, int>()
-                    {
-                        {"Size", (int) Data.SizeEnum.Small},
-                        {"Texture", (int) Data.TextureEnum.Rough},
-                        {"Style", (int) Data.StyleEnum.Creepy}
-                    }
-                },
-
-                new ObjectTemplate()
-                {
-                    Name = "Table",
-                    MaxParams = new Dictionary<string, int>()
-                    {
-                        {"Size", (int) Data.SizeEnum.Big},
-                        {"Texture", (int) Data.TextureEnum.Bumpy},
-                        {"Style", (int) Data.StyleEnum.Elegant}
-                    },
-                    MinParams = new Dictionary<string, int>()
-                    {
-                        {"Size", (int) Data.SizeEnum.Small},
-                        {"Texture", (int) Data.TextureEnum.Rough},
-                        {"Style", (int) Data.StyleEnum.Creepy}
-                    }
-                },
 
             });
         }

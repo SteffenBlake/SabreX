@@ -12,7 +12,12 @@ namespace SabreX
 
         static void Main(string[] args)
         {
-            
+            ObjectFactory FACTORY = new ObjectFactory();
+            Templates TEMPLATES = new Templates();
+
+            FACTORY.Generate(out ObjectBase Room, TEMPLATES.BaseTemplateList.First());
+
+            Room.Generate(FACTORY);
         }
     }
 }
