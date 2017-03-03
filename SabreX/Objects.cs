@@ -96,6 +96,7 @@ namespace SabreX
     public class ObjectBase
     {
         public Guid Id = Guid.Empty;
+        public ObjectFactory FACTORY;
 
         public bool isContainer = false;
         public bool isSurface = false;
@@ -109,6 +110,7 @@ namespace SabreX
         public ObjectBase()
         {
             Id = new Guid();
+            FACTORY = Program.FACTORY;
             DoSpecialLoad();
         }
 
@@ -120,6 +122,7 @@ namespace SabreX
         {
             if (Template) { return; }
             Id = new Guid();
+            FACTORY = Program.FACTORY;
             DoSpecialLoad();
         }
 
@@ -127,15 +130,33 @@ namespace SabreX
         public string Name { get; set; }
 
         //Properties
-        public BrightnessProperty Brightness = new BrightnessProperty();
-        public DensityProperty Density = new DensityProperty();
-        public SizeProperty Size = new SizeProperty();
-        public SmellProperty Smell = new SmellProperty();
-        public TasteProperty Taste = new TasteProperty();
-        public TemperatureProperty Temperature = new TemperatureProperty();
-        public TextureProperty Texture = new TextureProperty();
-        public VolumeProperty Volume = new VolumeProperty();
-        public StyleProperty Style = new StyleProperty();
+        public BrightnessProperty pBrightness = new BrightnessProperty();
+        public DensityProperty pDensity = new DensityProperty();
+        public SizeProperty pSize = new SizeProperty();
+        public SmellProperty pSmell = new SmellProperty();
+        public TasteProperty pTaste = new TasteProperty();
+        public TemperatureProperty pTemperature = new TemperatureProperty();
+        public TextureProperty pTexture = new TextureProperty();
+        public VolumeProperty pVolume = new VolumeProperty();
+        public StyleProperty pStyle = new StyleProperty();
+
+        public Data.BrightnessEnum _Brightness()
+        {
+            int val = (int)pBrightness.Value;
+            if (isContainer) { val += FACTORY.GetList(Container).Sum(c => (int)c._Brightness()); }
+
+            List<Data.BrightnessEnum> enumList = Enum.GetValues(typeof(Data.BrightnessEnum)).Cast<Data.BrightnessEnum>().ToList();
+
+            if (val < (int)enumList.Min()) { return enumList.Min(); }
+            if (val > (int)enumList.Max()) { return enumList.Max(); }
+
+            return (Data.BrightnessEnum)val;
+        }
+
+        public Data.BrightnessEnum _Weight()
+        {
+
+        }
 
         //Library
         public Dictionary<string, Action> Commands = new Dictionary<string, Action>();
@@ -163,15 +184,15 @@ namespace SabreX
                 Functions[pair.Key] = pair.Value;
             }
 
-            (Brightness.Min, Brightness.Max) = parent.Brightness.MinMax();
-            (Density.Min, Density.Max) = parent.Density.MinMax();
-            (Size.Min, Size.Max) = parent.Size.MinMax();
-            (Smell.Min, Smell.Max) = parent.Smell.MinMax();
-            (Taste.Min, Taste.Max) = parent.Taste.MinMax();
-            (Temperature.Min, Temperature.Max) = parent.Temperature.MinMax();
-            (Texture.Min, Texture.Max) = parent.Texture.MinMax();
-            (Volume.Min, Volume.Max) = parent.Volume.MinMax();
-            (Style.Min, Style.Max) = parent.Style.MinMax();
+            (pBrightness.Min, pBrightness.Max) = parent.pBrightness.MinMax();
+            (pDensity.Min, pDensity.Max) = parent.pDensity.MinMax();
+            (pSize.Min, pSize.Max) = parent.pSize.MinMax();
+            (pSmell.Min, pSmell.Max) = parent.pSmell.MinMax();
+            (pTaste.Min, pTaste.Max) = parent.pTaste.MinMax();
+            (pTemperature.Min, pTemperature.Max) = parent.pTemperature.MinMax();
+            (pTexture.Min, pTexture.Max) = parent.pTexture.MinMax();
+            (pVolume.Min, pVolume.Max) = parent.pVolume.MinMax();
+            (pStyle.Min, pStyle.Max) = parent.pStyle.MinMax();
         }
 
         /// <summary>
@@ -205,32 +226,32 @@ namespace SabreX
             }
         }
         
-        public void Generate(ObjectFactory FACTORY)
+        public void Generate()
         {
             if (isContainer)
             {
                 foreach (var child in FACTORY.GetList(Container))
                 {
-                    child.Generate(FACTORY);
+                    child.Generate();
                 }
             }
 
             if (isSurface) {
                 foreach (var child in FACTORY.GetList(Surface))
                 {
-                    child.Generate(FACTORY);
+                    child.Generate();
                 }
             }
 
-            Brightness.Generate();
-            Density.Generate();
-            Size.Generate();
-            Smell.Generate();
-            Taste.Generate();
-            Temperature.Generate();
-            Texture.Generate();
-            Volume.Generate();
-            Style.Generate();
+            pBrightness.Generate();
+            pDensity.Generate();
+            pSize.Generate();
+            pSmell.Generate();
+            pTaste.Generate();
+            pTemperature.Generate();
+            pTexture.Generate();
+            pVolume.Generate();
+            pStyle.Generate();
 
             DoSpecialGenerate();
         }
@@ -240,26 +261,31 @@ namespace SabreX
         /// </summary>
         /// <param name="FACTORY">The ObjectFactory of the project.</param>
         /// <returns></returns>
-        public List<Guid> getChildren(ObjectFactory FACTORY)
+        public List<Guid> getChildren()
         {
             List<Guid> outlist = new List<Guid>();
             if (isSurface)
             {
-                outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+                outlist.AddRange(Surface.SelectMany(child => FACTORY.Get(child).getChildren()).ToList());
                 outlist.AddRange(Surface);
             }
             if (isContainer)
             {
-                outlist.AddRange(Container.SelectMany(child => FACTORY.Get(child).getChildren(FACTORY)).ToList());
+                outlist.AddRange(Container.SelectMany(child => FACTORY.Get(child).getChildren()).ToList());
                 outlist.AddRange(Container);
             }
             return outlist;
         }
 
+        public void Fill()
+        {
+
+        }
+
         public virtual void DoSpecialLoad() { }
         public virtual void DoSpecialGenerate() { }
     }
-
+    #region "Properties"
     public class BrightnessProperty
     {
         public Data.BrightnessEnum Value { get; set; }
@@ -469,4 +495,5 @@ namespace SabreX
             Value = (Data.StyleEnum)(new Random().Next((int)Min, (int)Max + 1));
         }
     }
+    #endregion
 }

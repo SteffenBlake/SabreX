@@ -9,15 +9,20 @@ namespace SabreX
 {
     public class Program
     {
+        public static ObjectFactory FACTORY = new ObjectFactory();
 
         static void Main(string[] args)
         {
-            ObjectFactory FACTORY = new ObjectFactory();
             Templates TEMPLATES = new Templates();
 
             FACTORY.Generate(out ObjectBase Room, TEMPLATES.BaseTemplateList.First());
 
-            Room.Generate(FACTORY);
+            Room.Generate();
+        }
+
+        public static ObjectFactory CurrentFactory()
+        {
+            return FACTORY;
         }
     }
 }
